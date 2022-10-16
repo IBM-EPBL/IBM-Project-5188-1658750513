@@ -1,1 +1,21 @@
 
+int pirsensor = 0;
+void setup()//the setup routine runs once when you press reset
+{
+pinMode(13,OUTPUT);//initialize digital 13 pin as an output
+pinMode(12,INPUT);//initialize digital 12 pin as an input
+}
+void loop()//the loop routine runs multiple times
+{
+pirsensor = digitalRead(2);
+if (pirsensor==HIGH)
+{
+digitalWrite(13,HIGH);
+delay(10000);
+}
+else
+{
+digitalWrite(13,LOW);
+delay(120);
+}
+}
