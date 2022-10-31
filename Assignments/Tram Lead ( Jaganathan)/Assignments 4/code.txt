@@ -1,0 +1,104 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <PubSubClient.h> 
+
+#define ORG "17lsro" 
+#define DEVICE_TYPE "MyDeviceType" 
+#define DEVICE_ID "12345" 
+#define TOKEN "GkatKdiUS?UVHKvnAD" 
+
+char server[] = ORG ".messaging.internetofthings.ibmcloud.com";
+char pubTopic1[] = "iot-2/evt/status1/fmt/json";
+char pubTopic2[] = "iot-2/evt/status2/fmt/json";
+char authMethod[] = "use-token-auth";
+char token[] = TOKEN;
+char clientId[] = "d:" ORG ":" DEVICE_TYPE ":" DEVICE_ID;
+const int DHT_PIN = 15;
+WiFiClient wifiClient;
+PubSubClient client(server, 1883, NULL, wifiClient);
+
+
+#define ECHO_PIN 12
+#define TRIG_PIN 13
+
+float readDistanceCM() ;
+void setup() {
+  Serial.begin(115200);
+  pinMode(15, OUTPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  Serial.println();
+    Serial.print("Connecting to "); 
+   
+    WiFi.begin("Wokwi-GUEST", "", 6);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(50);
+      Serial.print(".");
+    } 
+    Serial.println("");
+    
+    Serial.print("WiFi connected, IP address: "); 
+    Serial.println(WiFi.localIP());
+
+    if (!client.connected()) {
+        Serial.print("Reconnecting client to ");
+        Serial.println(server);
+        while (!client.connect(clientId, authMethod, token)) {
+            Serial.print(".");
+            delay(500);
+        }
+        Serial.println("Bluemix connected");
+}
+}
+
+float readDistanceCM() 
+{
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  int duration = pulseIn(ECHO_PIN, HIGH);
+  return duration * 0.034 / 2;
+}
+long lastMsg = 0;
+void loop() {
+  float distance = readDistanceCM();
+
+  bool isNearby = distance < 100;//checking  whether the distance is less than 100
+  digitalWrite(15, isNearby);
+
+  Serial.print("Measured distance: ");
+  Serial.println(readDistanceCM());
+
+  delay(100);
+  if(isNearby)//Whenever the distance is less than 100 cms send an "alert" to the IBM cloud
+  {
+
+   client.loop();
+    long now = millis();
+    if (now - lastMsg > 3000) {
+        lastMsg = now;
+         
+       String payload = "{\"distance\":";
+       
+       payload += distance;
+      
+       payload += "}:";
+
+       
+        Serial.print("Sending payload: ");
+        Serial.println(payload);
+
+        if (client.publish(pubTopic1, (char*) payload.c_str())) {
+            Serial.println("Publish ok");
+        } else {
+            Serial.println("Publish failed");
+        }
+        
+       
+        
+    }
+}
+}
