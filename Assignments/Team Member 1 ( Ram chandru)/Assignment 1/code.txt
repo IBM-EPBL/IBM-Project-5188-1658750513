@@ -1,1 +1,32 @@
 
+#include<Servo.h>
+Servo s;
+int led=6;
+int pir=2;
+int buzz=13;
+void setup()
+{
+pinMode(pir,INPUT);
+pinMode(led,OUTPUT);
+pinMode(buzz,OUTPUT);
+s.attach(8);
+Serial.begin(9600);
+}
+void loop()
+{
+int val = digitalRead(pir);
+Serial.println(val);
+if(val==HIGH)
+{
+digitalWrite(led,HIGH);
+s.write(90);
+tone(buzz,131);
+}
+else
+{
+digitalWrite(led,LOW);
+s.write(0);
+noTone(buzz);
+}
+delay(10);
+}
